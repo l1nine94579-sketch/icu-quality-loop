@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { STATUS_LABEL, STATUS_TONE, type ReportStatus } from "@/lib/roles";
+import { STATUS_LABEL, STATUS_TONE, ROLE_LABEL, type ReportStatus, type Role } from "@/lib/roles";
+import { CAP_LABEL, rolesWith, type Capability } from "@/lib/permissions";
 
 export function Pill({ tone = "neutral", children }: { tone?: string; children: React.ReactNode }) {
   return <span className={`pill ${tone}`}>{children}</span>;
@@ -129,5 +130,38 @@ export function BackLink({ href, children }: { href: string; children: React.Rea
     <Link href={href} className="muted" style={{ fontSize: 12 }}>
       ← {children}
     </Link>
+  );
+}
+
+/** 403：直接访问无权限页面时的落地页，明确告诉用户该找谁 */
+export function NoAccess({ role, capability }: { role: Role; capability: Capability }) {
+  const roles = rolesWith(capability);
+  return (
+    <main className="page">
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">权限不足</h1>
+          <div className="page-sub">当前身份：{ROLE_LABEL[role]} · 该操作不在你的职责范围内</div>
+        </div>
+      </div>
+      <Card title={`你没有「${CAP_LABEL[capability]}」的权限`}>
+        <div className="note bad" style={{ marginBottom: 12 }}>
+          角色与能力是服务端强校验的：即使手动访问链接或构造请求，也会在这里被拦下。
+        </div>
+        <div className="row wrap" style={{ gap: 8 }}>
+          <span className="muted" style={{ fontSize: 12 }}>
+            拥有该能力的身份：
+          </span>
+          {roles.map((r) => (
+            <span key={r} className="pill brand">
+              {ROLE_LABEL[r]}
+            </span>
+          ))}
+        </div>
+        <div className="hint" style={{ marginTop: 12 }}>
+          演示版可以在右上角切换身份体验不同角色的界面；真实系统里身份来自单点登录，用户无法自选。
+        </div>
+      </Card>
+    </main>
   );
 }

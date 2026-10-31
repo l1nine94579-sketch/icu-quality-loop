@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ACTOR_COOKIE, currentUser } from "@/lib/session";
+import { assertCan } from "@/lib/permissions";
 import { recordAudit } from "@/lib/audit";
 import {
   approveReport,
@@ -94,6 +95,11 @@ export async function recomputeAction(formData: FormData): Promise<void> {
 export async function rebuildMetricsAction(formData: FormData): Promise<void> {
   const patientId = String(formData.get("patientId") ?? "");
   const actor = await currentUser();
+  try {
+    assertCan(actor, "patient:edit");
+  } catch (err) {
+    flash(patientId ? `/patients/${patientId}` : "/patients", err instanceof Error ? err.message : "无权限", "error");
+  }
   const result = rebuildMetrics(patientId || undefined);
   recordAudit({
     actor,
@@ -112,6 +118,11 @@ export async function adoptAgentDraft(formData: FormData): Promise<void> {
   const period = String(formData.get("period"));
   const note = String(formData.get("note") ?? "");
   const actor = await currentUser();
+  try {
+    assertCan(actor, "report:submit");
+  } catch (err) {
+    flash(`/reports/${period}`, err instanceof Error ? err.message : "无权限", "error");
+  }
   const report = getReport(period);
   run("UPDATE qc_reports SET submit_note = ? WHERE period = ?", note, period);
   recordAudit({

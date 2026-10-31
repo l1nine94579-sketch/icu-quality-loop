@@ -14,9 +14,10 @@ import {
 } from "@/lib/reports";
 import { listAudit, ACTION_LABEL } from "@/lib/audit";
 import { currentUser, ROLE_LABEL } from "@/lib/session";
+import { can, CAP_LABEL } from "@/lib/permissions";
 import { userName } from "@/lib/repo";
 import { fmtDateTime, periodLabel, pct } from "@/lib/format";
-import { Card, Delta, Flash, Meter, Pill, StatusPill } from "@/components/ui";
+import { Card, Delta, Flash, Meter, NoAccess, Pill, StatusPill } from "@/components/ui";
 import { AgentPanel } from "@/components/AgentPanel";
 import { runRuleAgent } from "@/lib/agent";
 import {
@@ -51,6 +52,8 @@ export default async function ReportDetailPage({
   if (!listPeriods().includes(period)) notFound();
 
   const user = await currentUser();
+  if (!can(user.role, "report:view")) return <NoAccess role={user.role} capability="report:view" />;
+
   const items = buildItems(period);
   const report = getReport(period);
   const audit = listAudit({ entity: "qc_report", entityId: period, limit: 20 });
@@ -65,9 +68,10 @@ export default async function ReportDetailPage({
       ? runRuleAgent({ question: "帮我起草一段报告说明", period, patientId: undefined })
       : null;
 
-  const canSubmit = user.role === "qc" && (report.status === "draft" || report.status === "returned");
-  const canReview = user.role === "director" && report.status === "submitted";
-  const canReportOut = user.role === "director" && report.status === "approved";
+  const canSubmit = can(user.role, "report:submit") && (report.status === "draft" || report.status === "returned");
+  const canReview = can(user.role, "report:review") && report.status === "submitted";
+  const canReportOut = can(user.role, "report:reportOut") && report.status === "approved";
+  const canRecompute = can(user.role, "report:recompute");
 
   return (
     <main className="page">
@@ -97,15 +101,23 @@ export default async function ReportDetailPage({
           </div>
         </div>
         <div className="page-actions">
-          <Link href={`/reports/${period}?draft=1`} className="btn btn-sm">
-            AI 起草说明
-          </Link>
-          <form action={recomputeAction}>
-            <input type="hidden" name="period" value={period} />
-            <button className="btn btn-sm" type="submit">
-              按当前口径重取数
-            </button>
-          </form>
+          {can(user.role, "agent:period") ? (
+            <Link href={`/reports/${period}?draft=1`} className="btn btn-sm">
+              AI 起草说明
+            </Link>
+          ) : null}
+          {canRecompute ? (
+            <form action={recomputeAction}>
+              <input type="hidden" name="period" value={period} />
+              <button className="btn btn-sm" type="submit">
+                按当前口径重取数
+              </button>
+            </form>
+          ) : (
+            <span className="chip muted" title="需科室质控员权限">
+              重取数需质控员权限
+            </span>
+          )}
         </div>
       </div>
 
@@ -466,7 +478,16 @@ export default async function ReportDetailPage({
             ) : null}
           </Card>
 
-          <AgentPanel period={period} />
+          {can(user.role, "agent:period") ? (
+            <AgentPanel period={period} />
+          ) : (
+            <Card title="临床 Agent" sub="报告级会诊仅对质控与管理角色开放">
+              <div className="note">
+                当前身份是「{ROLE_LABEL[user.role]}」，可以使用患者级会诊（进入患者详情页）。
+                报告级分析涉及全科室数据，仅对科室质控员与科主任开放。
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </main>

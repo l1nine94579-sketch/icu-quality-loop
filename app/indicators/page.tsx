@@ -3,8 +3,10 @@ import { getIndicatorDef, listIndicatorDefs } from "@/lib/indicators";
 import { buildItems } from "@/lib/reports";
 import { currentPeriod } from "@/lib/repo";
 import { listPeriods } from "@/lib/reports";
+import { currentUser } from "@/lib/session";
+import { can } from "@/lib/permissions";
 import { pct, periodLabel } from "@/lib/format";
-import { Card, Meter, Pill } from "@/components/ui";
+import { Card, Meter, NoAccess, Pill } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,9 @@ export default async function IndicatorsPage({
 }: {
   searchParams: Promise<{ period?: string }>;
 }) {
+  const user = await currentUser();
+  if (!can(user.role, "indicator:view")) return <NoAccess role={user.role} capability="indicator:view" />;
+
   const sp = await searchParams;
   const periods = listPeriods();
   const period = sp.period && periods.includes(sp.period) ? sp.period : currentPeriod();

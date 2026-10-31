@@ -3,6 +3,7 @@ import { buildItems, getReport, listPeriods, STATUS_LABEL } from "@/lib/reports"
 import { getDashboard, listPatients } from "@/lib/repo";
 import { listAudit, ACTION_LABEL } from "@/lib/audit";
 import { currentUser, ROLE_LABEL } from "@/lib/session";
+import { can, CAP_LABEL, type Capability } from "@/lib/permissions";
 import { fmtDateTime, periodLabel, pct } from "@/lib/format";
 import { AkiPill, ArdsPill, Card, Delta, Flash, Kpi, Meter, Pill, StatusPill } from "@/components/ui";
 import { IconArrow } from "@/components/icons";
@@ -256,6 +257,31 @@ export default async function DashboardPage({
             </div>
             <div className="hint" style={{ marginTop: 8 }}>
               退回会把版本号 +1 并回到「已退回」，重新提交后生成新的冻结快照。
+            </div>
+          </Card>
+
+          <Card
+            title="当前身份权限"
+            sub={`${user.name} · ${ROLE_LABEL[user.role]}（服务端强校验）`}
+          >
+            <div className="stack" style={{ gap: 5 }}>
+              {(Object.keys(CAP_LABEL) as Capability[]).map((cap) => (
+                <div className="row between" key={cap}>
+                  <span style={{ fontSize: 12, color: can(user.role, cap) ? "var(--ink-2)" : "var(--faint)" }}>
+                    {CAP_LABEL[cap]}
+                  </span>
+                  {can(user.role, cap) ? (
+                    <Pill tone="ok">允许</Pill>
+                  ) : (
+                    <span className="faint" style={{ fontSize: 11.5 }}>
+                      无权
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="hint" style={{ marginTop: 10 }}>
+              菜单与按钮按权限隐藏，接口与页面也会二次校验——直接改 URL 也进不去。
             </div>
           </Card>
         </div>

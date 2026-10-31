@@ -4,10 +4,13 @@ import { getEvents, getObservations, getPatient } from "@/lib/repo";
 import { parseEvidence, type Evidence } from "@/lib/features";
 import { AKI_STAGE_LABEL, SEVERITY_LABEL, type Criterion } from "@/lib/engine";
 import { fmtDate, fmtDateTime, num, stayLabel } from "@/lib/format";
-import { AkiPill, ArdsPill, Card, Flash, Meter, Pill } from "@/components/ui";
+import { AkiPill, ArdsPill, Card, Flash, Meter, NoAccess, Pill } from "@/components/ui";
 import { Sparkline } from "@/components/Sparkline";
 import { AgentPanel } from "@/components/AgentPanel";
 import { rebuildMetricsAction } from "@/app/actions";
+import { currentUser } from "@/lib/session";
+import { can } from "@/lib/permissions";
+import { ROLE_LABEL } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +72,9 @@ export default async function PatientDetailPage({
 }) {
   const { id } = await params;
   const sp = await searchParams;
+  const user = await currentUser();
+  if (!can(user.role, "patient:view")) return <NoAccess role={user.role} capability="patient:view" />;
+
   const p = getPatient(id);
   if (!p) notFound();
 
@@ -121,7 +127,12 @@ export default async function PatientDetailPage({
           </span>
           <form action={rebuildMetricsAction}>
             <input type="hidden" name="patientId" value={p.id} />
-            <button className="btn btn-sm" type="submit">
+            <button
+              className="btn btn-sm"
+              type="submit"
+              disabled={!can(user.role, "patient:edit")}
+              title={can(user.role, "patient:edit") ? "按当前原始数据重算派生指标" : "仅责任护士与质控员可重算"}
+            >
               重算派生指标
             </button>
           </form>
@@ -260,7 +271,16 @@ export default async function PatientDetailPage({
             </div>
           </Card>
 
-          <AgentPanel patientId={p.id} patientName={p.name} />
+          {can(user.role, "agent:patient") ? (
+            <AgentPanel patientId={p.id} patientName={p.name} />
+          ) : (
+            <Card title="临床 Agent" sub="患者级会诊仅对临床角色开放">
+              <div className="note">
+                当前身份是「{ROLE_LABEL[user.role]}」。患者级会诊会读取检验与护理事件，
+                仅对责任护士与主管医生开放；你可以到质控报告页使用报告级分析。
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </main>

@@ -10,7 +10,7 @@
     "compile:node": "tsc -p tsconfig.scripts.json",
     "seed": "npm run compile:node && node .build/scripts/seed.js",
     "reset": "npm run compile:node && node .build/scripts/seed.js --reset",
-    "test": "npm run compile:node && node .build/tests/engine.test.js && node .build/tests/flow.test.js",
+    "test": "npm run compile:node && node .build/tests/engine.test.js && node .build/tests/permissions.test.js && node .build/tests/flow.test.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

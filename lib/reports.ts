@@ -3,6 +3,7 @@ import { INDICATORS, computeIndicator, listIndicatorDefs, type IndicatorDef } fr
 import { recordAudit } from "./audit";
 import { STATUS_LABEL, STATUS_TONE, type ReportStatus } from "./roles";
 import type { User } from "./session";
+import { assertCan } from "./permissions";
 
 export { STATUS_LABEL, STATUS_TONE };
 export type { ReportStatus };
@@ -156,6 +157,7 @@ export function saveResults(period: string, actor: User): void {
 }
 
 export function submitReport(period: string, actor: User, note: string): void {
+  assertCan(actor, "report:submit");
   const report = getReport(period);
   if (report.status !== "draft" && report.status !== "returned") {
     throw new Error(`当前状态「${STATUS_LABEL[report.status]}」不可提交`);
@@ -211,6 +213,7 @@ export function submitReport(period: string, actor: User, note: string): void {
 }
 
 export function approveReport(period: string, actor: User, note: string): void {
+  assertCan(actor, "report:review");
   const report = getReport(period);
   if (report.status !== "submitted") throw new Error("只有待审核的报告可以通过");
   run(
@@ -232,6 +235,7 @@ export function approveReport(period: string, actor: User, note: string): void {
 }
 
 export function returnReport(period: string, actor: User, note: string): void {
+  assertCan(actor, "report:review");
   const report = getReport(period);
   if (report.status !== "submitted") throw new Error("只有待审核的报告可以退回");
   if (note.trim().length < 6) throw new Error("退回必须写明原因（至少 6 字）");
@@ -255,6 +259,7 @@ export function returnReport(period: string, actor: User, note: string): void {
 }
 
 export function reportToCenter(period: string, actor: User): void {
+  assertCan(actor, "report:reportOut");
   const report = getReport(period);
   if (report.status !== "approved") throw new Error("必须先审核通过才能上报");
   run(
@@ -274,6 +279,7 @@ export function reportToCenter(period: string, actor: User): void {
 }
 
 export function recomputeReport(period: string, actor: User): void {
+  assertCan(actor, "report:recompute");
   const report = getReport(period);
   const before = buildItems(period).map((i) => ({ code: i.def.code, rate: i.rate }));
   saveResults(period, actor);

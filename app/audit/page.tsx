@@ -1,7 +1,9 @@
 import { ACTION_LABEL, listAudit } from "@/lib/audit";
 import { ROLE_LABEL, type Role } from "@/lib/session";
+import { currentUser } from "@/lib/session";
+import { can } from "@/lib/permissions";
 import { fmtDateTime } from "@/lib/format";
-import { Card, Pill } from "@/components/ui";
+import { Card, NoAccess, Pill } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +15,9 @@ const TONE = (action: string) => {
 };
 
 export default async function AuditPage() {
+  const user = await currentUser();
+  if (!can(user.role, "audit:view")) return <NoAccess role={user.role} capability="audit:view" />;
+
   const rows = listAudit({ limit: 120 });
 
   return (
