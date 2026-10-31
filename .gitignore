@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.build/
+data/*.db
+data/*.db-*
+.npm-cache/
+_ref/
+*.log
+.DS_Store
+.env
+.env.local

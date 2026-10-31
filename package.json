@@ -1,0 +1,27 @@
+{
+  "name": "icu-quality-loop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "重症质控闭环工作台（简化演示版）：多角色审批 + 指标口径可追溯 + 可解释的临床 Agent",
+  "scripts": {
+    "dev": "next dev -p 3310",
+    "build": "next build",
+    "start": "next start -p 3310",
+    "compile:node": "tsc -p tsconfig.scripts.json",
+    "seed": "npm run compile:node && node .build/scripts/seed.js",
+    "reset": "npm run compile:node && node .build/scripts/seed.js --reset",
+    "test": "npm run compile:node && node .build/tests/engine.test.js && node .build/tests/flow.test.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "next": "15.5.28",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.2",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1",
+    "typescript": "5.9.3"
+  }
+}
