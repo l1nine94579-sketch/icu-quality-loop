@@ -7,10 +7,12 @@ import { fmtDate, fmtDateTime, num, stayLabel } from "@/lib/format";
 import { AkiPill, ArdsPill, Card, Flash, Meter, NoAccess, Pill } from "@/components/ui";
 import { Sparkline } from "@/components/Sparkline";
 import { AgentPanel } from "@/components/AgentPanel";
+import { EntryForms } from "@/components/EntryForms";
 import { rebuildMetricsAction } from "@/app/actions";
 import { currentUser } from "@/lib/session";
 import { can } from "@/lib/permissions";
 import { ROLE_LABEL } from "@/lib/roles";
+import { getReport, STATUS_LABEL } from "@/lib/reports";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +79,8 @@ export default async function PatientDetailPage({
 
   const p = getPatient(id);
   if (!p) notFound();
+
+  const report = getReport(p.period ?? p.admitted_at.slice(0, 7));
 
   const observations = getObservations(id);
   const events = getEvents(id);
@@ -259,7 +263,17 @@ export default async function PatientDetailPage({
             </div>
             <div className="row between" style={{ fontSize: 12, marginTop: 6 }}>
               <span className="muted">用药前送检</span>
-              {p.culture_before_abx ? <Pill tone="ok">合规</Pill> : <Pill tone="bad">不合规</Pill>}
+              {p.abx_started ? (
+                p.culture_before_abx ? (
+                  <Pill tone="ok">合规</Pill>
+                ) : (
+                  <Pill tone="bad">不合规</Pill>
+                )
+              ) : (
+                <span className="faint" style={{ fontSize: 11.5 }}>
+                  未使用抗菌药
+                </span>
+              )}
             </div>
             <div className="row between" style={{ fontSize: 12, marginTop: 6 }}>
               <span className="muted">24h 早期评估</span>
@@ -270,6 +284,35 @@ export default async function PatientDetailPage({
               派生指标更新于 {fmtDateTime(p.computed_at)}
             </div>
           </Card>
+
+          {can(user.role, "patient:edit") ? (
+            <Card
+              title="数据补录"
+              sub={`${p.period} · 报告${STATUS_LABEL[report.status]}${report.snapshot ? "（口径已冻结）" : ""}`}
+              actions={
+                report.snapshot ? (
+                  <Link href={`/reports/${p.period}`} className="btn btn-sm">
+                    对比冻结口径
+                  </Link>
+                ) : null
+              }
+            >
+              <EntryForms
+                patientId={p.id}
+                admittedAt={p.admitted_at}
+                period={p.period ?? ""}
+                reportStatus={STATUS_LABEL[report.status]}
+                frozen={Boolean(report.snapshot)}
+              />
+            </Card>
+          ) : (
+            <Card title="数据补录" sub={`${p.period} · 报告${STATUS_LABEL[report.status]}`}>
+              <div className="note">
+                当前身份「{ROLE_LABEL[user.role]}」没有补录权限。如需修正检验或护理事件，
+                请切换到责任护士 / 科室质控员。
+              </div>
+            </Card>
+          )}
 
           {can(user.role, "agent:patient") ? (
             <AgentPanel patientId={p.id} patientName={p.name} />

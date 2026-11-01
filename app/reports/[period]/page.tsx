@@ -19,6 +19,7 @@ import { userName } from "@/lib/repo";
 import { fmtDateTime, periodLabel, pct } from "@/lib/format";
 import { Card, Delta, Flash, Meter, NoAccess, Pill, StatusPill } from "@/components/ui";
 import { AgentPanel } from "@/components/AgentPanel";
+import { PrintButton } from "@/components/PrintButton";
 import { runRuleAgent } from "@/lib/agent";
 import {
   adoptAgentDraft,
@@ -101,6 +102,10 @@ export default async function ReportDetailPage({
           </div>
         </div>
         <div className="page-actions">
+          <a className="btn btn-sm" href={`/api/reports/${period}/export`}>
+            导出 CSV
+          </a>
+          <PrintButton />
           {can(user.role, "agent:period") ? (
             <Link href={`/reports/${period}?draft=1`} className="btn btn-sm">
               AI 起草说明

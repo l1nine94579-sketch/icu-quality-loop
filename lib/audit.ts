@@ -23,6 +23,8 @@ export const ACTION_LABEL: Record<string, string> = {
   report_recomputed: "重新取数",
   metrics_rebuilt: "重算患者派生指标",
   observation_added: "补录检验数据",
+  event_added: "补录护理事件",
+  report_exported: "导出质控报告",
   agent_consulted: "发起 AI 会诊",
   agent_draft_adopted: "采纳 AI 草稿",
 };

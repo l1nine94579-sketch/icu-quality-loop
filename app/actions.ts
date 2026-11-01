@@ -16,6 +16,7 @@ import {
 } from "@/lib/reports";
 import { run } from "@/lib/db";
 import { rebuildMetrics } from "@/lib/rebuild";
+import { addCareEvent, addObservation, entryMessage } from "@/lib/entry";
 
 function flash(path: string, message: string, kind: "ok" | "error" = "ok"): never {
   const sep = path.includes("?") ? "&" : "?";
@@ -111,6 +112,52 @@ export async function rebuildMetricsAction(formData: FormData): Promise<void> {
   });
   revalidatePath("/", "layout");
   flash(patientId ? `/patients/${patientId}` : "/patients", `已重算 ${result.count} 名患者的派生指标`);
+}
+
+/** 补录一条检验 / 监护数据：落库 → 重算派生层 → 回显指标变化 */
+export async function addObservationAction(formData: FormData): Promise<void> {
+  const patientId = String(formData.get("patientId") ?? "");
+  const actor = await currentUser();
+  let message = "";
+  let kind: "ok" | "error" = "ok";
+  try {
+    const result = addObservation({
+      patientId,
+      code: String(formData.get("code") ?? ""),
+      value: Number(formData.get("value")),
+      measuredAt: String(formData.get("measuredAt") ?? ""),
+      actor,
+    });
+    message = entryMessage(result);
+  } catch (err) {
+    kind = "error";
+    message = err instanceof Error ? err.message : "补录失败";
+  }
+  revalidatePath("/", "layout");
+  flash(`/patients/${patientId}`, message, kind);
+}
+
+/** 补录一条护理事件：同样走「落库 → 重算 → 回显指标变化」 */
+export async function addCareEventAction(formData: FormData): Promise<void> {
+  const patientId = String(formData.get("patientId") ?? "");
+  const actor = await currentUser();
+  let message = "";
+  let kind: "ok" | "error" = "ok";
+  try {
+    const result = addCareEvent({
+      patientId,
+      type: String(formData.get("type") ?? ""),
+      at: String(formData.get("at") ?? ""),
+      label: String(formData.get("label") ?? ""),
+      actor,
+    });
+    message = entryMessage(result, "补录");
+  } catch (err) {
+    kind = "error";
+    message = err instanceof Error ? err.message : "补录失败";
+  }
+  revalidatePath("/", "layout");
+  flash(`/patients/${patientId}`, message, kind);
 }
 
 /** 采纳 AI 草稿：AI 只产出文本，落库必须由人点击确认（HITL） */

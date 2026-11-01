@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "重症质控闭环工作台（简化演示版）：多角色审批 + 指标口径可追溯 + 可解释的临床 Agent",
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
     "dev": "next dev -p 3310",
     "build": "next build",
@@ -10,7 +13,7 @@
     "compile:node": "tsc -p tsconfig.scripts.json",
     "seed": "npm run compile:node && node .build/scripts/seed.js",
     "reset": "npm run compile:node && node .build/scripts/seed.js --reset",
-    "test": "npm run compile:node && node .build/tests/engine.test.js && node .build/tests/permissions.test.js && node .build/tests/flow.test.js",
+    "test": "npm run compile:node && node .build/tests/engine.test.js && node .build/tests/permissions.test.js && node .build/tests/entry.test.js && node .build/tests/flow.test.js",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

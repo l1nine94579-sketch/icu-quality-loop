@@ -51,3 +51,11 @@ export function relativeDays(iso: string, now = new Date()): string {
   if (diff === 1) return "昨天";
   return `${diff} 天前`;
 }
+
+/** datetime-local 输入框需要 "YYYY-MM-DDTHH:mm" 的本地时间字符串 */
+export function datetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
