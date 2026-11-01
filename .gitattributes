@@ -1,0 +1,18 @@
+# 统一换行符：仓库内一律 LF，检出时按平台处理，避免 CRLF 警告刷屏
+* text=auto eol=lf
+
+# 二进制文件不要做文本转换，也不要尝试 diff
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.db binary
+*.doc binary
+*.docx binary
+*.pdf binary
+*.zip binary
+
+# Markdown 表格里的中文不希望被某些编辑器自动折行
+*.md text eol=lf
